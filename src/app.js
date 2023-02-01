@@ -84,14 +84,7 @@ app.post("/choice",async (req,res) => {
             return res.status(422).send("Title não pode ser vazio");
         }
 
-        const arrayChoices = await db.collection("choices").findOne({title: title, pollId: pollId})
-        // const titleExist = specificPoll.pollChoices.filter((e) => {
-        //   if(e.title === title){
-        //     return true
-        //   }
-        // })
-
-        // Ou tem a opção de criar um objeto estático na poll de uma vez em vez do padrão
+        const arrayChoices = await db.collection("choices").findOne({title: title, pollId: ObjectId(pollId)})
 
         if(arrayChoices){
             return res.status(409).send("O title não pode ser repetido")
@@ -101,15 +94,8 @@ app.post("/choice",async (req,res) => {
             return res.status(403).send("A enquete já expirou")
         }
 
-        await db.collection("choices").insertOne({title, pollId})
-        await db.collection("poll").aggregate([
-            {
-                $lookup:{
-                    from:"choices",
-                    as:"pollChoices"
-                }
-            }
-        ])
+        await db.collection("choices").insertOne({title: title, pollId: ObjectId(pollId)})
+
         return send.status(201).send("Opção de voto criada")
         
     } catch (error) {
