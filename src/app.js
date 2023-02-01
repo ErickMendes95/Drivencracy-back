@@ -33,9 +33,16 @@ app.get("/poll",async (req,res) => {
 
 app.get("/poll/:id/choice",async (req,res) => {
     try {
-        
+        const { id } = req.params;
+
+        if(!id){
+            return res.status(404).send("Enquete não existe");
+        }
+
+        const arrayChoices = await db.collection("choices").find({pollId: ObjectId(id)}).toArray();
+        return res.status(200).send(arrayChoices);
     } catch (error) {
-        console.log(error.message)
+        console.log(error.message);
     }
 })
 
