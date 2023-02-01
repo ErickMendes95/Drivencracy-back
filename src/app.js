@@ -41,6 +41,7 @@ app.get("/poll/:id/choice",async (req,res) => {
 
         const arrayChoices = await db.collection("choices").find({pollId: ObjectId(id)}).toArray();
         return res.status(200).send(arrayChoices);
+
     } catch (error) {
         console.log(error.message);
     }
@@ -60,50 +61,50 @@ app.post("/poll",async (req,res) => {
         let newDate = expireAt;
         if(!title){
             return res.status(422).send("Title não pode ser vazio");
-        }
+        };
 
         if(!newDate){
             newDate = dayjs().add(30, 'day').format(dayjsFormat);
-        }
+        };
 
         await db.collection("poll").insertOne({
             title: title,
             expireAt: newDate
-        })
+        });
 
-        res.status(201).send("Enquete criada com sucesso")
+        res.status(201).send("Enquete criada com sucesso");
     } catch (error) {
-        console.log(error.message)
+        console.log(error.message);
     }
 })
 
 app.post("/choice",async (req,res) => {
     try {
-        const {title, pollId} = req.body
+        const {title, pollId} = req.body;
 
         const specificPoll = await db.collection("poll").findOne({_id: ObjectId(pollId)}).toArray();
 
         if(!specificPoll){
             return res.status(404).send("A enquete não existe");
-        }
+        };
         
         if(!title){
             return res.status(422).send("Title não pode ser vazio");
-        }
+        };
 
-        const arrayChoices = await db.collection("choices").findOne({title: title, pollId: ObjectId(pollId)})
+        const arrayChoices = await db.collection("choices").findOne({title: title, pollId: ObjectId(pollId)});
 
         if(arrayChoices){
-            return res.status(409).send("O title não pode ser repetido")
-        }
+            return res.status(409).send("O title não pode ser repetido");
+        };
 
         if(specificPoll.expireAt < dayjs().format(dayjsFormat)){
-            return res.status(403).send("A enquete já expirou")
-        }
+            return res.status(403).send("A enquete já expirou");
+        };
 
-        await db.collection("choices").insertOne({title: title, pollId: ObjectId(pollId)})
+        await db.collection("choices").insertOne({title: title, pollId: ObjectId(pollId)});
 
-        return send.status(201).send("Opção de voto criada")
+        return send.status(201).send("Opção de voto criada");
         
     } catch (error) {
         console.log(error.message);
@@ -112,15 +113,31 @@ app.post("/choice",async (req,res) => {
 
 app.post("/choice/:id/vote",async (req,res) => {
     try {
+        const {id} = req.params;
+
+        const choiceExist = await db.collection("choices").findOne({_id: ObjectId(id)}).toArray();
+
+        if(!choiceExist){
+            return res.status(404).send("Opção de voto não existe");
+        };
         
+        const pollExpired = await db.collection("poll").findOne({_id: ObjectId(choiceExist.pollId)}).toArray();
+
+        if(pollExpired.expireAt < dayjs().format(dayjsFormat)){
+            return res.status(403).send("Enquete expirada");
+        };
+
+        await db.collection("votes").insertOne({
+            createdAt: dayjs().format(dayjsFormat),
+            choiceId: ObjectId(choiceExist._id)
+        });
+
+        return res.status(201).send("Voto cadastrado");
+
     } catch (error) {
-        console.log(error.message)
+        console.log(error.message);
     }
 })
-
-
-
-
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log("Server rodando na porta " + PORT));
