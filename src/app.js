@@ -22,6 +22,8 @@ const dayjsFormat = ('YYYY/MM/DD HH:mm');
 const app = express();
 app.use(express.json()).use(cors());
 
+
+
 app.get("/poll",async (req,res) => {
     try {
         const poll = await db.collection("poll").find({}).toArray();
@@ -49,6 +51,18 @@ app.get("/poll/:id/choice",async (req,res) => {
 
 app.get("/poll/:id/result",async (req,res) => {
     try {
+
+        const {id} = req.params;
+
+        const specificPoll = await db.collection("poll").findOne({_id: ObjectId(id)}).toArray();
+
+        if(!specificPoll){
+            return res.status(404).send("Enquete não existe");
+        };
+
+        const arrayChoices = await db.collection("choices").find({pollId: ObjectId(id)}).toArray()
+        const arrayVotes = await db.collection("votes").aggregate({$sortByCount: "$choiceId: ObjectId(arrayChoices.pollId)"}).toArray()
+        
         
     } catch (error) {
         console.log(error.message)
